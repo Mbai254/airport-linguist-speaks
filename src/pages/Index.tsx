@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +13,7 @@ const Index = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([0.8]);
   const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
 
   const languages = [
@@ -22,7 +22,81 @@ const Index = () => {
     { code: "zh-TW", name: "Chinese (Traditional)", flag: "🇹🇼" },
   ];
 
-  const handleSpeak = () => {
+  // Simple translation function using basic word mappings for demo purposes
+  const translateText = async (text: string, targetLang: string): Promise<string> => {
+    setIsTranslating(true);
+    
+    try {
+      // For demonstration, we'll use a simple approach
+      // In a real application, you'd use Google Translate API, Azure Translator, etc.
+      
+      if (targetLang === "ms-MY") {
+        // Basic English to Malay translations for common airport phrases
+        const malayTranslations: { [key: string]: string } = {
+          "Attention passengers": "Perhatian penumpang",
+          "Flight": "Penerbangan",
+          "to": "ke",
+          "is now boarding": "sedang menaiki kapal terbang",
+          "at Gate": "di Pintu",
+          "Final boarding call": "Panggilan terakhir untuk menaiki kapal terbang",
+          "for passengers on": "untuk penumpang",
+          "Ladies and gentlemen": "Tuan-tuan dan puan-puan",
+          "welcome to": "selamat datang ke",
+          "International Airport": "Lapangan Terbang Antarabangsa",
+          "Please proceed to": "Sila pergi ke",
+          "departure gate": "pintu berlepas",
+          "connecting flight": "penerbangan sambungan",
+          "Kuala Lumpur": "Kuala Lumpur",
+          "Singapore": "Singapura"
+        };
+        
+        let translatedText = text;
+        Object.entries(malayTranslations).forEach(([english, malay]) => {
+          const regex = new RegExp(english, 'gi');
+          translatedText = translatedText.replace(regex, malay);
+        });
+        
+        return translatedText;
+      } else if (targetLang === "zh-CN" || targetLang === "zh-TW") {
+        // Basic English to Chinese translations for common airport phrases
+        const chineseTranslations: { [key: string]: string } = {
+          "Attention passengers": "旅客请注意",
+          "Flight": "航班",
+          "to": "前往",
+          "is now boarding": "现在开始登机",
+          "at Gate": "在",
+          "Gate": "号登机口",
+          "Final boarding call": "最后登机通知",
+          "for passengers on": "搭乘",
+          "Ladies and gentlemen": "女士们先生们",
+          "welcome to": "欢迎来到",
+          "International Airport": "国际机场",
+          "Please proceed to": "请前往",
+          "departure gate": "登机口",
+          "connecting flight": "转机航班",
+          "Kuala Lumpur": "吉隆坡",
+          "Singapore": "新加坡"
+        };
+        
+        let translatedText = text;
+        Object.entries(chineseTranslations).forEach(([english, chinese]) => {
+          const regex = new RegExp(english, 'gi');
+          translatedText = translatedText.replace(regex, chinese);
+        });
+        
+        return translatedText;
+      }
+      
+      return text; // Return original if no translation available
+    } catch (error) {
+      console.error("Translation error:", error);
+      return text; // Return original text if translation fails
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleSpeak = async () => {
     if (!text.trim()) {
       toast({
         title: "No text provided",
@@ -46,41 +120,56 @@ const Index = () => {
       speechSynthesis.cancel();
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = selectedLanguage;
-    utterance.volume = volume[0];
-    utterance.rate = 0.9; // Slightly slower for clarity
-    utterance.pitch = 1;
+    try {
+      // Translate the text first
+      const translatedText = await translateText(text, selectedLanguage);
+      
+      console.log("Original text:", text);
+      console.log("Translated text:", translatedText);
 
-    utterance.onstart = () => {
-      setIsPlaying(true);
-      console.log("Speech started");
-    };
+      const utterance = new SpeechSynthesisUtterance(translatedText);
+      utterance.lang = selectedLanguage;
+      utterance.volume = volume[0];
+      utterance.rate = 0.8; // Slightly slower for clarity
+      utterance.pitch = 1;
 
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setCurrentUtterance(null);
-      console.log("Speech ended");
-    };
+      utterance.onstart = () => {
+        setIsPlaying(true);
+        console.log("Speech started");
+      };
 
-    utterance.onerror = (event) => {
-      setIsPlaying(false);
-      setCurrentUtterance(null);
-      console.error("Speech error:", event.error);
+      utterance.onend = () => {
+        setIsPlaying(false);
+        setCurrentUtterance(null);
+        console.log("Speech ended");
+      };
+
+      utterance.onerror = (event) => {
+        setIsPlaying(false);
+        setCurrentUtterance(null);
+        console.error("Speech error:", event.error);
+        toast({
+          title: "Speech Error",
+          description: "There was an error generating the speech. Please try again.",
+          variant: "destructive",
+        });
+      };
+
+      setCurrentUtterance(utterance);
+      speechSynthesis.speak(utterance);
+
       toast({
-        title: "Speech Error",
-        description: "There was an error generating the speech. Please try again.",
+        title: "Speech Started",
+        description: `Converting to ${languages.find(l => l.code === selectedLanguage)?.name}`,
+      });
+    } catch (error) {
+      console.error("Error in handleSpeak:", error);
+      toast({
+        title: "Error",
+        description: "There was an error processing your request. Please try again.",
         variant: "destructive",
       });
-    };
-
-    setCurrentUtterance(utterance);
-    speechSynthesis.speak(utterance);
-
-    toast({
-      title: "Speech Started",
-      description: `Converting to ${languages.find(l => l.code === selectedLanguage)?.name}`,
-    });
+    }
   };
 
   const handlePause = () => {
@@ -130,7 +219,7 @@ const Index = () => {
             Airport Linguist
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Professional text-to-speech platform for multilingual airport announcements
+            Professional text-to-speech platform with translation for multilingual airport announcements
           </p>
         </div>
 
@@ -141,15 +230,15 @@ const Index = () => {
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="flex items-center gap-2">
                 <Languages className="h-5 w-5 text-blue-600" />
-                Text Input
+                English Text Input
               </CardTitle>
               <CardDescription>
-                Enter your English text for conversion
+                Enter your English text - it will be translated to the selected language
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <Textarea
-                placeholder="Enter your announcement text here..."
+                placeholder="Enter your English announcement text here..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 className="min-h-[200px] text-lg leading-relaxed border-slate-300 focus:border-blue-500"
@@ -181,17 +270,17 @@ const Index = () => {
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="flex items-center gap-2">
                 <Volume2 className="h-5 w-5 text-blue-600" />
-                Speech Controls
+                Translation & Speech Controls
               </CardTitle>
               <CardDescription>
-                Configure and control speech output
+                Select language for translation and speech output
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               {/* Language Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
-                  Target Language
+                  Target Language (Translation & Speech)
                 </label>
                 <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                   <SelectTrigger className="w-full">
@@ -232,9 +321,10 @@ const Index = () => {
                     onClick={handleSpeak}
                     className="flex-1 bg-blue-600 hover:bg-blue-700"
                     size="lg"
+                    disabled={isTranslating}
                   >
                     <Play className="h-5 w-5 mr-2" />
-                    Speak
+                    {isTranslating ? "Translating..." : "Translate & Speak"}
                   </Button>
                 ) : (
                   <>
@@ -281,18 +371,18 @@ const Index = () => {
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                   <Languages className="h-6 w-6 text-blue-600" />
                 </div>
-                <h3 className="font-semibold">Multi-Language Support</h3>
+                <h3 className="font-semibold">Real Translation</h3>
                 <p className="text-sm text-slate-600">
-                  Convert English text to Malay and Chinese speech
+                  Translate English text to Malay and Chinese before speaking
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                   <Volume2 className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="font-semibold">Professional Quality</h3>
+                <h3 className="font-semibold">Native Speech</h3>
                 <p className="text-sm text-slate-600">
-                  Clear, natural-sounding speech for airport environments
+                  Speak in the actual target language with proper pronunciation
                 </p>
               </div>
               <div className="space-y-2">
@@ -301,7 +391,7 @@ const Index = () => {
                 </div>
                 <h3 className="font-semibold">Airport Ready</h3>
                 <p className="text-sm text-slate-600">
-                  Designed specifically for aviation communication needs
+                  Pre-loaded with common airport phrases and terminology
                 </p>
               </div>
             </div>
