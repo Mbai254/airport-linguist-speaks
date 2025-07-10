@@ -22,78 +22,161 @@ const Index = () => {
     { code: "zh-TW", name: "Chinese (Traditional)", flag: "🇹🇼" },
   ];
 
-  // Simple translation function using basic word mappings for demo purposes
+  // Enhanced translation function with better Chinese support
   const translateText = async (text: string, targetLang: string): Promise<string> => {
     setIsTranslating(true);
     
     try {
-      // For demonstration, we'll use a simple approach
-      // In a real application, you'd use Google Translate API, Azure Translator, etc.
+      // Simulate translation delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       if (targetLang === "ms-MY") {
-        // Basic English to Malay translations for common airport phrases
+        // Enhanced English to Malay translations
         const malayTranslations: { [key: string]: string } = {
           "Attention passengers": "Perhatian penumpang",
+          "attention passengers": "perhatian penumpang",
           "Flight": "Penerbangan",
+          "flight": "penerbangan",
           "to": "ke",
           "is now boarding": "sedang menaiki kapal terbang",
+          "now boarding": "sedang menaiki kapal terbang",
           "at Gate": "di Pintu",
+          "at gate": "di pintu",
+          "Gate": "Pintu",
+          "gate": "pintu",
           "Final boarding call": "Panggilan terakhir untuk menaiki kapal terbang",
+          "final boarding call": "panggilan terakhir untuk menaiki kapal terbang",
           "for passengers on": "untuk penumpang",
+          "passengers on": "penumpang",
           "Ladies and gentlemen": "Tuan-tuan dan puan-puan",
+          "ladies and gentlemen": "tuan-tuan dan puan-puan",
           "welcome to": "selamat datang ke",
+          "Welcome to": "Selamat datang ke",
           "International Airport": "Lapangan Terbang Antarabangsa",
+          "international airport": "lapangan terbang antarabangsa",
           "Please proceed to": "Sila pergi ke",
+          "please proceed to": "sila pergi ke",
           "departure gate": "pintu berlepas",
           "connecting flight": "penerbangan sambungan",
           "Kuala Lumpur": "Kuala Lumpur",
-          "Singapore": "Singapura"
+          "Singapore": "Singapura",
+          "Thank you": "Terima kasih",
+          "thank you": "terima kasih"
         };
         
         let translatedText = text;
         Object.entries(malayTranslations).forEach(([english, malay]) => {
-          const regex = new RegExp(english, 'gi');
+          const regex = new RegExp(`\\b${english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
           translatedText = translatedText.replace(regex, malay);
         });
         
         return translatedText;
       } else if (targetLang === "zh-CN" || targetLang === "zh-TW") {
-        // Basic English to Chinese translations for common airport phrases
+        // Enhanced English to Chinese translations
         const chineseTranslations: { [key: string]: string } = {
-          "Attention passengers": "旅客请注意",
+          "Attention passengers": "各位旅客请注意",
+          "attention passengers": "各位旅客请注意",
           "Flight": "航班",
-          "to": "前往",
+          "flight": "航班",
+          "to": "飞往",
           "is now boarding": "现在开始登机",
+          "now boarding": "现在开始登机",
           "at Gate": "在",
+          "at gate": "在",
           "Gate": "号登机口",
+          "gate": "号登机口",
           "Final boarding call": "最后登机通知",
+          "final boarding call": "最后登机通知",
           "for passengers on": "搭乘",
+          "passengers on": "搭乘",
           "Ladies and gentlemen": "女士们先生们",
+          "ladies and gentlemen": "女士们先生们",
           "welcome to": "欢迎来到",
+          "Welcome to": "欢迎来到",
           "International Airport": "国际机场",
+          "international airport": "国际机场",
           "Please proceed to": "请前往",
+          "please proceed to": "请前往",
           "departure gate": "登机口",
           "connecting flight": "转机航班",
           "Kuala Lumpur": "吉隆坡",
-          "Singapore": "新加坡"
+          "Singapore": "新加坡",
+          "Thank you": "谢谢",
+          "thank you": "谢谢"
         };
         
         let translatedText = text;
         Object.entries(chineseTranslations).forEach(([english, chinese]) => {
-          const regex = new RegExp(english, 'gi');
+          const regex = new RegExp(`\\b${english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
           translatedText = translatedText.replace(regex, chinese);
         });
         
         return translatedText;
       }
       
-      return text; // Return original if no translation available
+      return text;
     } catch (error) {
       console.error("Translation error:", error);
-      return text; // Return original text if translation fails
+      return text;
     } finally {
       setIsTranslating(false);
     }
+  };
+
+  // Function to find the best voice for the selected language
+  const findBestVoice = (lang: string): SpeechSynthesisVoice | null => {
+    const voices = speechSynthesis.getVoices();
+    console.log("Available voices:", voices.map(v => ({ name: v.name, lang: v.lang, gender: v.name })));
+    
+    // Filter voices by language
+    const languageVoices = voices.filter(voice => {
+      if (lang === "ms-MY") {
+        return voice.lang.includes("ms") || voice.lang.includes("MY");
+      } else if (lang === "zh-CN") {
+        return voice.lang.includes("zh-CN") || voice.lang.includes("cmn");
+      } else if (lang === "zh-TW") {
+        return voice.lang.includes("zh-TW") || voice.lang.includes("zh-HK");
+      }
+      return false;
+    });
+
+    // If no specific language voices, try broader language matching
+    if (languageVoices.length === 0) {
+      const broadVoices = voices.filter(voice => {
+        if (lang === "ms-MY") {
+          return voice.lang.startsWith("ms");
+        } else if (lang === "zh-CN" || lang === "zh-TW") {
+          return voice.lang.startsWith("zh");
+        }
+        return false;
+      });
+      
+      // Prefer female voices (common female voice indicators)
+      const femaleVoice = broadVoices.find(voice => 
+        voice.name.toLowerCase().includes('female') ||
+        voice.name.toLowerCase().includes('woman') ||
+        voice.name.toLowerCase().includes('mei') ||
+        voice.name.toLowerCase().includes('ling') ||
+        voice.name.toLowerCase().includes('hui') ||
+        voice.name.toLowerCase().includes('siti') ||
+        voice.name.toLowerCase().includes('nurul')
+      );
+      
+      return femaleVoice || broadVoices[0] || null;
+    }
+
+    // Prefer female voices from language-specific voices
+    const femaleVoice = languageVoices.find(voice => 
+      voice.name.toLowerCase().includes('female') ||
+      voice.name.toLowerCase().includes('woman') ||
+      voice.name.toLowerCase().includes('mei') ||
+      voice.name.toLowerCase().includes('ling') ||
+      voice.name.toLowerCase().includes('hui') ||
+      voice.name.toLowerCase().includes('siti') ||
+      voice.name.toLowerCase().includes('nurul')
+    );
+    
+    return femaleVoice || languageVoices[0];
   };
 
   const handleSpeak = async () => {
@@ -115,12 +198,30 @@ const Index = () => {
       return;
     }
 
-    // Stop any currently playing speech
+    // Stop any currently playing speech safely
     if (currentUtterance) {
       speechSynthesis.cancel();
+      setCurrentUtterance(null);
+      setIsPlaying(false);
+      // Wait a bit for the cancellation to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     try {
+      // Wait for voices to be loaded
+      if (speechSynthesis.getVoices().length === 0) {
+        await new Promise(resolve => {
+          const checkVoices = () => {
+            if (speechSynthesis.getVoices().length > 0) {
+              resolve(true);
+            } else {
+              setTimeout(checkVoices, 100);
+            }
+          };
+          checkVoices();
+        });
+      }
+
       // Translate the text first
       const translatedText = await translateText(text, selectedLanguage);
       
@@ -128,10 +229,20 @@ const Index = () => {
       console.log("Translated text:", translatedText);
 
       const utterance = new SpeechSynthesisUtterance(translatedText);
+      
+      // Find and set the best voice
+      const bestVoice = findBestVoice(selectedLanguage);
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+        console.log("Selected voice:", bestVoice.name, bestVoice.lang);
+      } else {
+        console.log("No specific voice found, using default");
+      }
+      
       utterance.lang = selectedLanguage;
       utterance.volume = volume[0];
-      utterance.rate = 0.8; // Slightly slower for clarity
-      utterance.pitch = 1;
+      utterance.rate = 0.7; // Slower for clarity and smoother sound
+      utterance.pitch = 1.1; // Slightly higher pitch for more pleasant female sound
 
       utterance.onstart = () => {
         setIsPlaying(true);
@@ -145,14 +256,18 @@ const Index = () => {
       };
 
       utterance.onerror = (event) => {
+        console.error("Speech error:", event.error);
         setIsPlaying(false);
         setCurrentUtterance(null);
-        console.error("Speech error:", event.error);
-        toast({
-          title: "Speech Error",
-          description: "There was an error generating the speech. Please try again.",
-          variant: "destructive",
-        });
+        
+        // Don't show error toast for 'interrupted' errors as they're expected when user stops/changes speech
+        if (event.error !== 'interrupted') {
+          toast({
+            title: "Speech Error",
+            description: "There was an error generating the speech. Please try again.",
+            variant: "destructive",
+          });
+        }
       };
 
       setCurrentUtterance(utterance);
@@ -164,6 +279,8 @@ const Index = () => {
       });
     } catch (error) {
       console.error("Error in handleSpeak:", error);
+      setIsPlaying(false);
+      setCurrentUtterance(null);
       toast({
         title: "Error",
         description: "There was an error processing your request. Please try again.",
@@ -380,9 +497,9 @@ const Index = () => {
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                   <Volume2 className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="font-semibold">Native Speech</h3>
+                <h3 className="font-semibold">Enhanced Voice</h3>
                 <p className="text-sm text-slate-600">
-                  Speak in the actual target language with proper pronunciation
+                  Optimized for smooth, female voices with natural pronunciation
                 </p>
               </div>
               <div className="space-y-2">
