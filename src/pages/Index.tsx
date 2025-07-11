@@ -4,8 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Play, Pause, Square, Volume2, Plane, Languages, Key } from "lucide-react";
+import { Play, Pause, Square, Volume2, Plane, Languages } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TranslationService } from "@/services/translationService";
 
@@ -16,7 +15,6 @@ const Index = () => {
   const [volume, setVolume] = useState([0.8]);
   const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [geminiApiKey, setGeminiApiKey] = useState("");
   const { toast } = useToast();
 
   const languages = [
@@ -139,7 +137,7 @@ const Index = () => {
       }
 
       // Create translation service and translate text
-      const translationService = new TranslationService(geminiApiKey);
+      const translationService = new TranslationService();
       const translatedText = await translationService.translateText(text, selectedLanguage);
       
       console.log("Original text:", text);
@@ -255,28 +253,6 @@ const Index = () => {
             Professional text-to-speech platform with AI translation for multilingual airport announcements
           </p>
         </div>
-
-        {/* API Key Input */}
-        <Card className="shadow-lg border-slate-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-blue-600" />
-              Gemini API Configuration
-            </CardTitle>
-            <CardDescription>
-              Enter your Gemini API key for enhanced AI translation (optional - basic translation available without API key)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Input
-              type="password"
-              placeholder="Enter your Gemini API key..."
-              value={geminiApiKey}
-              onChange={(e) => setGeminiApiKey(e.target.value)}
-              className="max-w-md"
-            />
-          </CardContent>
-        </Card>
 
         {/* Main Interface */}
         <div className="grid md:grid-cols-2 gap-6">
