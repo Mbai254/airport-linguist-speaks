@@ -6,9 +6,9 @@ export class TranslationService {
 
   constructor() {
     // Replace 'YOUR_GEMINI_API_KEY_HERE' with your actual Gemini API key
-    const apiKey = 'YOUR_GEMINI_API_KEY_HERE';
+    const apiKey = 'AIzaSyB-d8A7gDkbiAXq_4dRoq_II7NQ9y_YCbo';
     
-    if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY_HERE') {
+    if (apiKey && apiKey !== 'AIzaSyB-d8A7gDkbiAXq_4dRoq_II7NQ9y_YCbo') {
       this.genAI = new GoogleGenerativeAI(apiKey);
     }
   }
