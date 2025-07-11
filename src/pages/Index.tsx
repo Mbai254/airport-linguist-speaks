@@ -18,6 +18,7 @@ const Index = () => {
   const { toast } = useToast();
 
   const languages = [
+    { code: "en-US", name: "English", flag: "🇺🇸" },
     { code: "ms-MY", name: "Malay (Malaysia)", flag: "🇲🇾" },
     { code: "zh-CN", name: "Chinese (Mandarin)", flag: "🇨🇳" },
     { code: "zh-TW", name: "Chinese (Traditional)", flag: "🇹🇼" },
@@ -30,7 +31,14 @@ const Index = () => {
     
     let filteredVoices: SpeechSynthesisVoice[] = [];
     
-    if (lang === "ms-MY") {
+    if (lang === "en-US") {
+      // Look for English US voices, prefer female
+      filteredVoices = voices.filter(voice => 
+        voice.lang.includes("en-US") || 
+        voice.lang.includes("en_US") ||
+        (voice.lang.startsWith("en") && voice.name.toLowerCase().includes("us"))
+      );
+    } else if (lang === "ms-MY") {
       // Look for Malay voices
       filteredVoices = voices.filter(voice => 
         voice.lang.includes("ms") || 
@@ -38,18 +46,25 @@ const Index = () => {
         voice.name.toLowerCase().includes("malay")
       );
     } else if (lang === "zh-CN") {
-      // Look for Simplified Chinese voices
+      // Look for Simplified Chinese voices with better matching
       filteredVoices = voices.filter(voice => 
         voice.lang.includes("zh-CN") || 
-        voice.lang.includes("cmn") ||
-        (voice.lang.includes("zh") && !voice.lang.includes("TW") && !voice.lang.includes("HK")) ||
-        voice.name.toLowerCase().includes("chinese") ||
-        voice.name.toLowerCase().includes("mandarin")
+        voice.lang.includes("zh_CN") ||
+        voice.lang.includes("cmn-Hans") ||
+        voice.lang.includes("cmn-CN") ||
+        (voice.lang.includes("zh") && (
+          voice.name.toLowerCase().includes("china") ||
+          voice.name.toLowerCase().includes("mandarin") ||
+          voice.name.toLowerCase().includes("xiaoli") ||
+          voice.name.toLowerCase().includes("xiaoyan") ||
+          voice.name.toLowerCase().includes("huihui")
+        ))
       );
     } else if (lang === "zh-TW") {
       // Look for Traditional Chinese voices
       filteredVoices = voices.filter(voice => 
         voice.lang.includes("zh-TW") || 
+        voice.lang.includes("zh_TW") ||
         voice.lang.includes("zh-HK") ||
         voice.name.toLowerCase().includes("taiwan") ||
         voice.name.toLowerCase().includes("hong kong")
@@ -62,10 +77,12 @@ const Index = () => {
         filteredVoices = voices.filter(voice => voice.lang.startsWith("zh"));
       } else if (lang.startsWith("ms")) {
         filteredVoices = voices.filter(voice => voice.lang.startsWith("ms"));
+      } else if (lang.startsWith("en")) {
+        filteredVoices = voices.filter(voice => voice.lang.startsWith("en"));
       }
     }
 
-    // Prefer female voices (look for common female voice indicators)
+    // Prefer female voices with natural names
     const femaleVoice = filteredVoices.find(voice => {
       const name = voice.name.toLowerCase();
       return name.includes('female') || 
@@ -78,7 +95,10 @@ const Index = () => {
              name.includes('siti') || 
              name.includes('nurul') ||
              name.includes('yaoyao') ||
-             name.includes('huihui');
+             name.includes('huihui') ||
+             name.includes('samantha') ||
+             name.includes('karen') ||
+             name.includes('susan');
     });
     
     const selectedVoice = femaleVoice || filteredVoices[0] || null;
@@ -116,7 +136,7 @@ const Index = () => {
       speechSynthesis.cancel();
       setCurrentUtterance(null);
       setIsPlaying(false);
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     try {
@@ -155,8 +175,18 @@ const Index = () => {
       
       utterance.lang = selectedLanguage;
       utterance.volume = volume[0];
-      utterance.rate = 0.8; // Slower for clarity and more natural sound
-      utterance.pitch = 1.2; // Higher pitch for more pleasant female sound
+      
+      // Adjust settings for better Chinese pronunciation
+      if (selectedLanguage.startsWith("zh")) {
+        utterance.rate = 0.7; // Slower for Chinese clarity
+        utterance.pitch = 1.1; // Slightly higher pitch for femininity
+      } else if (selectedLanguage === "ms-MY") {
+        utterance.rate = 0.8;
+        utterance.pitch = 1.2;
+      } else {
+        utterance.rate = 0.85; // English
+        utterance.pitch = 1.1;
+      }
 
       utterance.onstart = () => {
         setIsPlaying(true);

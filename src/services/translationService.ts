@@ -8,7 +8,7 @@ export class TranslationService {
     // Replace 'YOUR_GEMINI_API_KEY_HERE' with your actual Gemini API key
     const apiKey = 'AIzaSyB-d8A7gDkbiAXq_4dRoq_II7NQ9y_YCbo';
     
-    if (apiKey && apiKey !== 'AIzaSyB-d8A7gDkbiAXq_4dRoq_II7NQ9y_YCbo') {
+    if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY_HERE') {
       this.genAI = new GoogleGenerativeAI(apiKey);
     }
   }
@@ -23,21 +23,30 @@ export class TranslationService {
       const model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
       
       let languageName = "";
+      let instructions = "";
+      
       switch (targetLanguage) {
         case "ms-MY":
           languageName = "Malay (Bahasa Malaysia)";
+          instructions = "Translate naturally and fluently. Use proper Malay pronunciation-friendly text.";
           break;
         case "zh-CN":
           languageName = "Simplified Chinese (Mandarin)";
+          instructions = "Translate to natural Simplified Chinese. Use common spoken Mandarin expressions that text-to-speech can pronounce clearly. Avoid complex characters that might be difficult for TTS engines.";
           break;
         case "zh-TW":
           languageName = "Traditional Chinese";
+          instructions = "Translate to natural Traditional Chinese. Use common spoken expressions that text-to-speech can pronounce clearly.";
           break;
+        case "en-US":
+          return text; // No translation needed for English
         default:
           return text;
       }
 
-      const prompt = `Translate this English text to ${languageName}. Only return the translation, nothing else:
+      const prompt = `${instructions}
+
+Translate this English text to ${languageName}. Only return the translation, nothing else:
 
 "${text}"`;
 
@@ -114,6 +123,10 @@ export class TranslationService {
         "Thank you": "謝謝"
       }
     };
+
+    if (targetLang === "en-US") {
+      return text; // No translation needed for English
+    }
 
     let translatedText = text;
     const targetTranslations = translations[targetLang];
